@@ -2,15 +2,18 @@ import { io, Socket } from "socket.io-client"
 
 let socket: Socket | null = null
 
-export const getSocket = () => {
+export function getSocket() {
   if (!socket) {
+    fetch("/api/socket") // 👈 init server
+
     socket = io({
-      path: "/socket",
-      withCredentials: true,
+      path: "/api/socket",
     })
   }
+
   return socket
 }
+
 
 export const disconnectSocket = () => {
   socket?.disconnect()
