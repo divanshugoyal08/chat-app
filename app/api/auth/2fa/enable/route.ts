@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
 
   const secret = speakeasy.generateSecret({
-    name: "ChatApp",
+    name: "ChatApp-" + payload.email + "-" + Date.now(),
   })
 
   const qrCode = await QRCode.toDataURL(secret.otpauth_url!)

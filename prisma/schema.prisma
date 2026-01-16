@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
@@ -13,33 +7,114 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  password      String?  
-  provider      Provider
-  name          String?
-  image         String?
-
-  // 2FA (future)
-  is2FAEnabled  Boolean  @default(false)
-  twoFASecret   String?
- resetTokens   PasswordResetToken[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
 enum Provider {
   GOOGLE
   PASSWORD
 }
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String?
+  provider      Provider
+  name          String?
+  image         String?
+status UserStatus?
+notifications Notification[]
+
+  chats         ChatUser[]
+  sentMessages  Message[]
+  resetTokens   PasswordResetToken[]
+readMessages MessageRead[]
+
+  isOnline      Boolean  @default(false)
+  is2FAEnabled  Boolean  @default(false)
+  twoFASecret   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
 model PasswordResetToken {
   id        String   @id @default(uuid())
   token     String   @unique
   userId    String
   expiresAt DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime?          // ✅ SAFE FIX
+
+  users     ChatUser[]
+  messages  Message[]
+}
+
+model ChatUser {
+  id        String   @id @default(uuid())
+  chatId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  chat     Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId   String
+  senderId String
+  content  String
+  seen     Boolean  @default(false)
+reads MessageRead[]
+notifications Notification[]
+
+  createdAt DateTime @default(now())
+
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model UserStatus {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+
+  isOnline  Boolean  @default(false)
+  lastSeen  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  messageId String?
+
+  type      NotificationType
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+enum NotificationType {
+  MESSAGE
 }

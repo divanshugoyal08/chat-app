@@ -7,7 +7,7 @@ import { cookies } from "next/headers"
 
 export async function POST(req: NextRequest) {
   const { code } = await req.json()
-  const tempToken = req.cookies.get("token")?.value
+  const tempToken = req.cookies.get("temp_token")?.value
 
   if (!tempToken) {
     return NextResponse.json({ message: "Session expired" }, { status: 401 })
@@ -38,13 +38,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Invalid 2FA code" }, { status: 400 })
   }
 
-  const finalToken = signToken({ userId: user.id })
+  const finalToken = signToken({ userId: user.id
+    , twofa:false
+   })
 
   const cookieStore = await cookies()
   cookieStore.set("token", finalToken, {
-    httpOnly: true,
-    path: "/",
-  })
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+})
 
   cookieStore.delete("temp_token")
 

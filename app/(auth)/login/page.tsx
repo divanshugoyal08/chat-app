@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import GoogleButton from "@/components/GoogleButton"
+import { useRouter } from "next/navigation"
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -22,12 +24,12 @@ export default function LoginPage() {
     setLoading(false)
 
     if (data.require2FA) {
-      window.location.href = "/verify-2fa"
+      router.push ("/verify-2fa")
       return
     }
 
     if (res.ok) {
-      window.location.href = "/chat"
+      router.push("/chat");
     } else {
       alert(data.message)
     }

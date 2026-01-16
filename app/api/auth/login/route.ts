@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         "5m"
       )
 
-      cookieStore.set("token", tempToken, {
+      cookieStore.set("temp_token", tempToken, {
        
   httpOnly: true,
   sameSite: "lax",
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     // 🔓 CASE 2: 2FA NOT ENABLED
     const token = signToken({ userId: user.id })
 
-    cookieStore.set("temp_token", token, {
+    cookieStore.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
