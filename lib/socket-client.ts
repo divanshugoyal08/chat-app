@@ -1,21 +1,7 @@
-import { io, Socket } from "socket.io-client"
+import { io } from "socket.io-client"
 
-let socket: Socket | null = null
-
-export function getSocket() {
-  if (!socket) {
-    fetch("/api/socket") // 👈 init server
-
-    socket = io({
-      path: "/api/socket",
-    })
-  }
-
-  return socket
-}
-
-
-export const disconnectSocket = () => {
-  socket?.disconnect()
-  socket = null
-}
+export const socket = io("http://localhost:3000", {
+  path: "/socket.io",
+  autoConnect: false,
+  withCredentials: true, // 🔥 cookie auto jayegi
+})

@@ -1,10 +1,13 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { verifyToken } from "@/lib/jwt"
 import prisma from "@/lib/prisma"
+import { cookies } from "next/headers"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const token = req.cookies.get("token")?.value
+    const cookieStore = await cookies() // ✅ FIX HERE
+    const token = cookieStore.get("token")?.value
+
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
     }
@@ -13,11 +16,18 @@ export async function GET(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { is2FAEnabled: true },
+      select: {
+        id: true,             // 🔥 REQUIRED
+        is2FAEnabled: true,
+      },
     })
 
+    if (!user) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    }
+
     return NextResponse.json(user)
-  } catch {
+  } catch (err) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
   }
 }

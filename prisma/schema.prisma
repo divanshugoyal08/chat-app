@@ -19,15 +19,16 @@ model User {
   provider      Provider
   name          String?
   image         String?
-status UserStatus?
-notifications Notification[]
 
-  chats         ChatUser[]
-  sentMessages  Message[]
+  // 🔹 CHAT RELATIONS
+  chats         Chat[]    @relation("ChatUsers")
+  messages      Message[]
+
+  // 🔹 AUTH / SECURITY
   resetTokens   PasswordResetToken[]
-readMessages MessageRead[]
 
   isOnline      Boolean  @default(false)
+  lastSeen      DateTime?
   is2FAEnabled  Boolean  @default(false)
   twoFASecret   String?
 
@@ -48,73 +49,25 @@ model PasswordResetToken {
 
 model Chat {
   id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime?          // ✅ SAFE FIX
 
-  users     ChatUser[]
+  // 🔹 exactly 2 users per chat (logical rule, DB level flexible)
+  users     User[]   @relation("ChatUsers")
+
   messages  Message[]
-}
 
-model ChatUser {
-  id        String   @id @default(uuid())
-  chatId   String
-  userId   String
-  joinedAt DateTime @default(now())
-
-  chat     Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([chatId, userId])
+  createdAt DateTime @default(now())
 }
 
 model Message {
   id        String   @id @default(uuid())
+
   chatId   String
   senderId String
   content  String
-  seen     Boolean  @default(false)
-reads MessageRead[]
-notifications Notification[]
+  read     Boolean  @default(false)
+
+  chat     Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
-
-  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender    User @relation(fields: [senderId], references: [id], onDelete: Cascade)
-}
-model MessageRead {
-  id        String   @id @default(uuid())
-  messageId String
-  userId    String
-  readAt    DateTime @default(now())
-
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId])
-}
-
-model UserStatus {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-
-  isOnline  Boolean  @default(false)
-  lastSeen  DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  messageId String?
-
-  type      NotificationType
-  isRead    Boolean  @default(false)
-
-  createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  message   Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
-}
-enum NotificationType {
-  MESSAGE
 }
